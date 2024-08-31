@@ -1,6 +1,6 @@
 #include <iostream>
 #include <winsock2.h>
-#include <cstring>  // Incluir para memset y strlen
+#include <cstring>
 
 using namespace std;
 
@@ -15,9 +15,9 @@ public:
         cout << "Conectando al servidor..." << endl << endl;
         WSAStartup(MAKEWORD(2, 0), &WSAData);
         server = socket(AF_INET, SOCK_STREAM, 0);
-        addr.sin_addr.s_addr = inet_addr("192.168.0.174"); // Asegúrate de que esta dirección IP sea correcta
+        addr.sin_addr.s_addr = inet_addr("192.168.0.174"); // Dirección IP del servidor
         addr.sin_family = AF_INET;
-        addr.sin_port = htons(5005); // Asegúrate de que este puerto sea correcto
+        addr.sin_port = htons(5005); // Puerto del servidor
 
         if (connect(server, (SOCKADDR*)&addr, sizeof(addr)) == SOCKET_ERROR) {
             cerr << "No se pudo conectar al servidor." << endl;
@@ -48,53 +48,28 @@ public:
         WSACleanup();
         cout << "Socket cerrado" << endl << endl;
     }
-
-    void Interactuar() {
-        string respuesta;
-
-        // Recibe el menú inicial del servidor
-        respuesta = Recibir();
-
-        while (true) {
-            // Enviar opción seleccionada
-            cout << "Selecciona una opción (0 - Generador de Nombres, 1 - Generador de Contraseñas, 2 - Salir): ";
-            string opcion;
-            cin >> opcion;
-            Enviar(opcion);
-
-            // Procesar opción
-            if (opcion == "0" || opcion == "1") {
-                // Recibe petición de longitud desde el servidor
-                respuesta = Recibir();
-
-                // Enviar longitud deseada
-                cout << "Ingresa la longitud deseada: ";
-                string longitud;
-                cin >> longitud;
-                Enviar(longitud);
-
-                // Recibir el resultado generado por el servidor
-                respuesta = Recibir();
-                cout << "El servidor ha generado: " << respuesta << endl;
-
-            } else if (opcion == "2") {
-                // Salir del programa
-                cout << "Saliendo..." << endl;
-                break;
-            } else {
-                // Manejar opciones no válidas
-                cout << "Opción no válida. Intenta de nuevo." << endl;
-            }
-        }
-
-        // Cerrar la conexión
-        CerrarSocket();
-    }
 };
 
 int main() {
     Cliente* cliente = new Cliente();
-    cliente->Interactuar();
+
+    while (true) {
+        // Recibir mensaje del servidor (menú u otra instrucción)
+        string respuesta = cliente->Recibir();
+
+        // Si la respuesta implica desconexión, salir del loop
+        if (respuesta.find("Saliendo") != string::npos) {
+            break;
+        }
+
+        // Enviar respuesta del usuario
+        string mensaje;
+        cout << "Respuesta: ";
+        cin >> mensaje;
+        cliente->Enviar(mensaje);
+    }
+
+    cliente->CerrarSocket();
     delete cliente;
     return 0;
 }
